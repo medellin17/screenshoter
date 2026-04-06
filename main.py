@@ -139,6 +139,9 @@ class Overlay:
             )
             self.frozen_photo = ImageTk.PhotoImage(frozen_img)
             self.canvas.create_image(0, 0, image=self.frozen_photo, anchor=tk.NW)
+            self.canvas.create_rectangle(
+                0, 0, screen_w, screen_h, fill="#000000", outline="", stipple="gray50"
+            )
 
         self.canvas.bind("<ButtonPress-1>", self._on_mouse_down)
         self.canvas.bind("<B1-Motion>", self._on_mouse_drag)
