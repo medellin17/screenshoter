@@ -119,7 +119,7 @@ class Overlay:
     def _create_window(self) -> None:
         self.top = tk.Toplevel(self.parent)
         self.top.attributes("-fullscreen", True)
-        self.top.attributes("-alpha", 1.0)
+        self.top.attributes("-alpha", 0.3)
         self.top.attributes("-topmost", True)
         self.top.configure(bg="black")
 
@@ -127,7 +127,7 @@ class Overlay:
         screen_h = self.top.winfo_screenheight()
 
         self.canvas = tk.Canvas(
-            self.top, width=screen_w, height=screen_h, bg="black", highlightthickness=0
+            self.top, width=screen_w, height=screen_h, bg="gray", highlightthickness=0
         )
         self.canvas.pack()
 
@@ -155,7 +155,6 @@ class Overlay:
             self.start_y,
             outline="white",
             width=2,
-            fill="#1a1a1a",
         )
 
     def _on_mouse_drag(self, event) -> None:
