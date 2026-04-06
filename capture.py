@@ -32,3 +32,14 @@ def get_full_screen_size() -> tuple[int, int]:
     with mss.mss() as sct:
         monitor = sct.monitors[0]
         return monitor["width"], monitor["height"]
+
+
+def capture_full_screen() -> Image.Image:
+    """Capture the entire primary monitor."""
+    with mss.mss() as sct:
+        monitor = sct.monitors[0]
+        screenshot = sct.grab(monitor)
+        return Image.frombytes("RGB", screenshot.size, screenshot.rgb)
+
+
+__all__ = ["capture_screenregion", "capture_full_screen"]

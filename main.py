@@ -5,7 +5,7 @@ import threading
 import pystray
 from PIL import Image, ImageDraw
 
-from capture import capture_screenregion
+from capture import capture_screenregion, capture_full_screen
 from clipboard import copy_to_clipboard
 
 
@@ -46,6 +46,7 @@ class ScreenshotApp:
         self.root.withdraw()
         self.is_capturing = False
         self.current_overlay = None
+        self.frozen_screen = None
 
         self.tray = TrayManager(self.trigger_screenshot, self.quit_app)
         self.tray.start()
@@ -67,10 +68,16 @@ class ScreenshotApp:
         if self.is_capturing:
             return
         self.is_capturing = True
+        self.frozen_screen = capture_full_screen()
         self.root.after(0, self._start_overlay)
 
     def _start_overlay(self) -> None:
-        self.current_overlay = Overlay(self.root, self._on_select, self._on_cancel)
+        self.current_overlay = Overlay(
+            self.root,
+            self._on_select,
+            self._on_cancel,
+            self.frozen_screen,
+        )
         self.current_overlay.show()
 
     def _on_select(self, left: int, top: int, right: int, bottom: int) -> None:
@@ -98,17 +105,21 @@ class ScreenshotApp:
 
 
 class Overlay:
-    def __init__(self, parent, on_select, on_cancel):
+    def __init__(self, parent, on_select, on_cancel, frozen_screen=None):
         self.parent = parent
         self.on_select = on_select
         self.on_cancel = on_cancel
-        self.start_x = None
-        self.start_y = None
-        self.rect_id = None
+        self.frozen_screen = frozen_screen
+        self.start_x: int | None = None
+        self.start_y: int | None = None
+        self.rect_id: int | None = None
 
-        self.top = tk.Toplevel(parent)
+        self._create_window()
+
+    def _create_window(self) -> None:
+        self.top = tk.Toplevel(self.parent)
         self.top.attributes("-fullscreen", True)
-        self.top.attributes("-alpha", 0.75)
+        self.top.attributes("-alpha", 1.0)
         self.top.attributes("-topmost", True)
         self.top.configure(bg="black")
 
@@ -119,6 +130,15 @@ class Overlay:
             self.top, width=screen_w, height=screen_h, bg="black", highlightthickness=0
         )
         self.canvas.pack()
+
+        if self.frozen_screen:
+            from PIL import Image as PILImage, ImageTk
+
+            frozen_img = self.frozen_screen.resize(
+                (screen_w, screen_h), PILImage.Resampling.LANCZOS
+            )
+            self.frozen_photo = ImageTk.PhotoImage(frozen_img)
+            self.canvas.create_image(0, 0, image=self.frozen_photo, anchor=tk.NW)
 
         self.canvas.bind("<ButtonPress-1>", self._on_mouse_down)
         self.canvas.bind("<B1-Motion>", self._on_mouse_drag)
@@ -139,7 +159,11 @@ class Overlay:
         )
 
     def _on_mouse_drag(self, event) -> None:
-        if self.rect_id:
+        if (
+            self.rect_id is not None
+            and self.start_x is not None
+            and self.start_y is not None
+        ):
             self.canvas.coords(
                 self.rect_id, self.start_x, self.start_y, event.x, event.y
             )
@@ -147,6 +171,9 @@ class Overlay:
     def _on_mouse_up(self, event) -> None:
         end_x = event.x
         end_y = event.y
+
+        if self.start_x is None or self.start_y is None:
+            return
 
         left = min(self.start_x, end_x)
         top = min(self.start_y, end_y)
@@ -164,7 +191,7 @@ class Overlay:
         self.on_cancel()
 
     def show(self) -> None:
-        self.top.grab_set()
+        self.top.grab_set_global()
 
 
 class Preview:
