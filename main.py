@@ -81,7 +81,7 @@ class ScreenshotApp:
         self.current_overlay.show()
 
     def _on_select(self, left: int, top: int, right: int, bottom: int) -> None:
-        image = capture_screenregion((left, top, right, bottom))
+        image = self.frozen_screen.crop((left, top, right, bottom))
         copy_to_clipboard(image)
         Preview(self.root, image, self._on_save, self._on_close_preview)
 
@@ -119,7 +119,6 @@ class Overlay:
     def _create_window(self) -> None:
         self.top = tk.Toplevel(self.parent)
         self.top.attributes("-fullscreen", True)
-        self.top.attributes("-alpha", 0.3)
         self.top.attributes("-topmost", True)
         self.top.configure(bg="black")
 
@@ -139,9 +138,10 @@ class Overlay:
             )
             self.frozen_photo = ImageTk.PhotoImage(frozen_img)
             self.canvas.create_image(0, 0, image=self.frozen_photo, anchor=tk.NW)
-            self.canvas.create_rectangle(
-                0, 0, screen_w, screen_h, fill="#000000", outline="", stipple="gray75"
-            )
+
+            dark_overlay = PILImage.new("RGBA", (screen_w, screen_h), (0, 0, 0, 128))
+            self.dark_photo = ImageTk.PhotoImage(dark_overlay)
+            self.canvas.create_image(0, 0, image=self.dark_photo, anchor=tk.NW)
 
         self.canvas.bind("<ButtonPress-1>", self._on_mouse_down)
         self.canvas.bind("<B1-Motion>", self._on_mouse_drag)
