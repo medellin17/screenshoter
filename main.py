@@ -194,6 +194,7 @@ class Overlay:
 
     def show(self) -> None:
         self.top.grab_set_global()
+        self.top.focus_force()
 
 
 class Preview:
