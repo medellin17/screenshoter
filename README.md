@@ -7,6 +7,8 @@
 [![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)](#)
 [![PyPI](https://img.shields.io/badge/status-ready-success?style=for-the-badge)](#)
 
+🌐 [English version](#-english-version)
+
 ---
 
 ## 🇷🇺 Русская версия
